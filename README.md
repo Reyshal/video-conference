@@ -1,4 +1,4 @@
-# Location Search
+# Video Conference
 
 Nextjs application for video conference where u can have meeting with ur co worker and also schedule meeting with them as well
 
@@ -19,13 +19,13 @@ This app is designed to facilitate seamless video conferencing and meeting sched
 1. Clone the repository:
 
 ```
-git clone https://github.com/Reyshal/location-search.git
+git clone https://github.com/Reyshal/video-conference.git
 ```
 
 2. Navigate to the project directory:
 
 ```
-cd location-search
+cd video-conference
 ```
 
 3. Install dependencies:
