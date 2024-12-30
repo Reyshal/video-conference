@@ -3,6 +3,7 @@
 import MeetingTypeList from "@/components/MeetingTypeList";
 import { useGetLatestCall } from "@/hooks/use-get-latest-call";
 import React from "react";
+import { motion } from "motion/react";
 
 const Home = () => {
   const now = new Date();
@@ -18,7 +19,12 @@ const Home = () => {
 
   return (
     <section className="flex size-full flex-col gap-10 text-white">
-      <div className="h-[300px] w-full rounded-[20px] bg-hero bg-cover">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="h-[300px] w-full rounded-[20px] bg-hero bg-cover"
+      >
         <div className="flex h-full flex-col justify-between max-md:px-5 max-md:py-8 lg:p-11">
           {todayCalls && todayCalls.length > 0 && (
             <h2 className="glassmorphism max-w-[270px] rounded py-2 text-center text-base font-normal">
@@ -34,7 +40,7 @@ const Home = () => {
             <p className="text-lg font-medium text-sky-1 lg:text-2xl">{date}</p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <MeetingTypeList />
     </section>
