@@ -71,7 +71,24 @@
 }
 
 .cl-socialButtonsIconButton {
-  border: 3px solid #565761;
+  background: #252a41;
+}
+
+.cl-socialButtonsIconButton:hover {
+  background: #252a41;
+}
+
+.cl-internal-1o11va6:hover {
+  color: unset;
+}
+
+.cl-internal-1nn89fl {
+  color: unset;
+}
+
+.cl-internal-zpbffa {
+  color: #000;
+  background-color: #fff;
 }
 
 .cl-internal-wkkub3 {
