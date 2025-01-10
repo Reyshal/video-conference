@@ -26,7 +26,11 @@ export const useGetCalls = () => {
             starts_at: { $exists: true },
             $or: [
               { created_by_user_id: user.id },
-              { members: { $in: [user.id] } },
+              {
+                "custom.members": {
+                  $in: [user.primaryEmailAddress?.emailAddress],
+                },
+              },
             ],
           },
         });
@@ -47,9 +51,15 @@ export const useGetCalls = () => {
   const endedCalls = calls.filter(({ state: { startsAt, endedAt } }: Call) => {
     return (startsAt && new Date(startsAt) < now) || !!endedAt;
   });
-  const upcomingCalls = calls.filter(({ state: { startsAt } }: Call) => {
-    return startsAt && new Date(startsAt) > now;
-  });
+  const upcomingCalls = calls.filter(
+    ({ state: { startsAt, custom } }: Call) => {
+      return (
+        custom.members?.includes(user?.primaryEmailAddress?.emailAddress) &&
+        startsAt &&
+        new Date(startsAt) > now
+      );
+    }
+  );
 
   return {
     endedCalls,

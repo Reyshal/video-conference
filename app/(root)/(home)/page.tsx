@@ -25,7 +25,7 @@ const Home = () => {
         transition={{ duration: 0.5 }}
         className="h-[300px] w-full rounded-[20px] bg-hero bg-cover"
       >
-        <div className="flex h-full flex-col justify-between max-md:px-5 max-md:py-8 lg:p-11">
+        <div className="flex h-full flex-col justify-between max-lg:px-5 max-lg:py-8 lg:p-11">
           {todayCalls && todayCalls.length > 0 && (
             <h2 className="glassmorphism max-w-[270px] rounded py-2 text-center text-base font-normal">
               Upcoming Meeting at:{" "}

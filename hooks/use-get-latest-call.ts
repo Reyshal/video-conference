@@ -26,7 +26,11 @@ export const useGetLatestCall = () => {
             starts_at: { $exists: true },
             $or: [
               { created_by_user_id: user.id },
-              { members: { $in: [user.id] } },
+              {
+                "custom.members": {
+                  $in: [user.primaryEmailAddress?.emailAddress],
+                },
+              },
             ],
           },
         });
@@ -40,9 +44,10 @@ export const useGetLatestCall = () => {
     };
 
     loadCalls();
-  }, [client, user?.id]);
+  }, [client, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   const todayCalls = calls.filter(({ state: { startsAt } }: Call) => {
     return (

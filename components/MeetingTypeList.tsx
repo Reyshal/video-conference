@@ -10,6 +10,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "./ui/textarea";
 import ReactDatePicker from "react-datepicker";
 import { Input } from "@/components/ui/input";
+import { useChatContext } from "stream-chat-react";
+import CreatableSelect from "react-select/creatable";
+
+interface MemberOptionType {
+  label: string;
+  value: string;
+}
+
+interface ValuesType {
+  dateTime: Date;
+  description: string;
+  link: string;
+  members: MemberOptionType[];
+}
 
 const MeetingTypeList = () => {
   const router = useRouter();
@@ -17,17 +31,19 @@ const MeetingTypeList = () => {
     "isScheduleMeeting" | "isJoiningMeeting" | "isInstantMeeting" | undefined
   >();
   const { user } = useUser();
-  const client = useStreamVideoClient();
-  const [values, setValues] = useState({
+  const videoClient = useStreamVideoClient();
+  const { client: chatClient } = useChatContext();
+  const [values, setValues] = useState<ValuesType>({
     dateTime: new Date(),
     description: "",
     link: "",
+    members: [],
   });
   const [callDetails, setCallDetails] = useState<Call>();
   const { toast } = useToast();
 
   const createMeeting = async () => {
-    if (!client || !user) return;
+    if (!videoClient || !user) return;
 
     try {
       if (!values.dateTime) {
@@ -38,19 +54,37 @@ const MeetingTypeList = () => {
       }
 
       const id = crypto.randomUUID();
-      const call = client.call("default", id);
+      const call = videoClient.call("default", id);
+      const channel = chatClient.channel("messaging", id);
 
-      if (!call) throw new Error("Failed to create call");
+      if (!call) {
+        toast({
+          title: "Failed to create meeting",
+        });
+      }
+      if (!channel) {
+        toast({
+          title: "Failed to create channel",
+        });
+      }
+
+      await channel.create();
+      await channel.addMembers([user?.id]);
 
       const startAt =
         values.dateTime.toISOString() || new Date(Date.now()).toISOString();
       const description = values.description || "Instant meeting";
+      const members =
+        values.members
+          .map((member) => member.value)
+          .filter((member) => validateEmail(member)) || [];
 
       await call.getOrCreate({
         data: {
           starts_at: startAt,
           custom: {
             description,
+            members,
           },
         },
       });
@@ -70,6 +104,20 @@ const MeetingTypeList = () => {
         title: "Failed to create meeting",
       });
     }
+  };
+
+  const handleChangeMembers = (value: ReadonlyArray<MemberOptionType>) => {
+    const members = value as MemberOptionType[];
+    setValues({
+      ...values,
+      members,
+    });
+  };
+
+  const validateEmail = (email: string) => {
+    // Simple regex for email validation
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   const meetingLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${callDetails?.id}`;
@@ -121,6 +169,7 @@ const MeetingTypeList = () => {
               onChange={(e) => {
                 setValues({ ...values, description: e.target.value });
               }}
+              placeholder="Daily Meeting..."
             />
           </div>
           <div className="flex w-full flex-col gap-2.5">
@@ -138,6 +187,61 @@ const MeetingTypeList = () => {
               timeCaption="time"
               dateFormat="MMMM d, yyyy h:mm aa"
               className="w-full rounded bg-dark-3 p-2 focus:outline-none"
+            />
+          </div>
+          <div className="flex w-full flex-col">
+            <label className="text-base text-normal leading-[22px] text-sky-2">
+              Participants
+            </label>
+            <p className="text-sm text-slate-400 mb-2.5">
+              If empty then everyone can join & only valid emails will be added
+            </p>
+            <CreatableSelect
+              isMulti
+              placeholder="reyke.svb@gmail.com"
+              value={values.members}
+              onChange={(value) => {
+                handleChangeMembers(value as ReadonlyArray<MemberOptionType>);
+              }}
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                  border: "none",
+                }),
+                input: (base) => ({
+                  ...base,
+                  color: "#ffffff",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                }),
+                option: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                  border: "1px solid #ffffff",
+                  marginRight: "4px",
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                }),
+                multiValueRemove: (base) => ({
+                  ...base,
+                  backgroundColor: "#252A41",
+                  color: "#ffffff",
+                }),
+              }}
             />
           </div>
         </MeetingModal>
