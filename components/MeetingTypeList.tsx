@@ -195,7 +195,7 @@ const MeetingTypeList = () => {
               Participants
             </label>
             <p className="text-sm text-slate-400 mb-2.5">
-              If empty then everyone can join & only valid emails will be added
+              You can add participants later in the meeting
             </p>
             <CreatableSelect
               isMulti

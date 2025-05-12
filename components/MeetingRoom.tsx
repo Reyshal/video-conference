@@ -27,6 +27,8 @@ import { useChannelStateContext } from "stream-chat-react";
 import { useUser } from "@clerk/nextjs";
 import { Input } from "./ui/input";
 import { toast } from "@/hooks/use-toast";
+import { AddParticipantModal } from "./AddParticipantModal";
+import { Button } from "./ui/button";
 
 // Define layout type options
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
@@ -38,10 +40,13 @@ const MeetingRoom = () => {
   const router = useRouter();
 
   // UI state
-  const [layout, setLayout] = useState<CallLayoutType>("speaker-left");
-  const [showParticipant, setShowParticipant] = useState<boolean>(false);
-  const [showChat, setShowChat] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
+  const [state, setState] = useState({
+    layout: "speaker-left" as CallLayoutType,
+    showParticipant: false,
+    showChat: false,
+    showAddParticipant: false,
+    message: "",
+  });
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +65,7 @@ const MeetingRoom = () => {
         router.push("/"); // Redirect to home
         toast({
           title: "Call ended",
-          description: "This call has already ended.",
+          description: "Call has ended by the host.",
           variant: "destructive",
         });
       }
@@ -78,7 +83,7 @@ const MeetingRoom = () => {
 
   // Renders the current call layout based on selected option
   const Calllayout = () => {
-    switch (layout) {
+    switch (state.layout) {
       case "grid":
         return <PaginatedGridLayout />;
       case "speaker-right":
@@ -115,8 +120,8 @@ const MeetingRoom = () => {
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    setMessage("");
-    channel?.sendMessage({ text: message });
+    setState({ ...state, message: "" });
+    channel?.sendMessage({ text: state.message });
 
     // Scroll to bottom
     if (chatContainerRef.current) {
@@ -127,8 +132,7 @@ const MeetingRoom = () => {
 
   // Toggle chat visibility
   const handleShowChat = async () => {
-    setShowChat((prev) => !prev);
-    setShowParticipant(false);
+    setState({ ...state, showChat: !state.showChat, showParticipant: false });
 
     // Scroll chat to bottom when opened
     if (chatContainerRef.current) {
@@ -139,8 +143,11 @@ const MeetingRoom = () => {
 
   // Toggle participant list visibility
   const handleShowParticipant = () => {
-    setShowParticipant((prev) => !prev);
-    setShowChat(false);
+    setState({
+      ...state,
+      showParticipant: !state.showParticipant,
+      showChat: false,
+    });
   };
 
   return (
@@ -154,7 +161,7 @@ const MeetingRoom = () => {
         {/* Chat panel */}
         <div
           className={cn("h-[calc(100vh-200px)] hidden mr-2", {
-            "show-block": showChat,
+            "show-block": state.showChat,
           })}
         >
           <form
@@ -174,8 +181,10 @@ const MeetingRoom = () => {
               <Input
                 placeholder="Send a message"
                 className="border-none bg-dark-3 focus-visible::ring-0 focus-visible:ring-offset-0"
-                onChange={(e) => setMessage(e.target.value)}
-                value={message}
+                onChange={(e) =>
+                  setState({ ...state, message: e.target.value })
+                }
+                value={state.message}
               />
             </div>
           </form>
@@ -189,10 +198,50 @@ const MeetingRoom = () => {
         {/* Participant list panel */}
         <div
           className={cn("h-[calc(100vh-200px)] hidden ml-2", {
-            "show-block": showParticipant,
+            "show-block": state.showParticipant,
           })}
         >
-          <CallParticipantsList onClose={() => setShowParticipant(false)} />
+          <CallParticipantsList
+            onClose={() => setState({ ...state, showParticipant: false })}
+          />
+          <div
+            className={cn(
+              "items-center justify-end h-[10%] bg-dark-1 rounded-b-[10px] hidden",
+              {
+                flex: call?.state.custom.is_scheduled,
+              }
+            )}
+          >
+            {/* Add participant button */}
+            <Button
+              onClick={() => setState({ ...state, showAddParticipant: true })}
+              className="bg-blue-1 mx-3 y-2 rounded-[3px]"
+            >
+              Add Participant
+            </Button>
+            <AddParticipantModal
+              isOpen={state.showAddParticipant}
+              setIsOpen={() =>
+                setState({ ...state, showAddParticipant: false })
+              }
+              onAdd={(email: string) => {
+                call?.update({
+                  custom: {
+                    ...call.state.custom,
+                    members: [...call.state.custom.members, email],
+                  },
+                });
+
+                toast({
+                  title: "Participant added",
+                  description: "Participant added successfully.",
+                  variant: "default",
+                });
+
+                setState({ ...state, showAddParticipant: false });
+              }}
+            />
+          </div>
         </div>
 
         {/* Control buttons row */}
@@ -221,7 +270,10 @@ const MeetingRoom = () => {
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() =>
-                        setLayout(item.toLowerCase() as CallLayoutType)
+                        setState((prev) => ({
+                          ...prev,
+                          layout: item.toLowerCase() as CallLayoutType,
+                        }))
                       }
                     >
                       {item}

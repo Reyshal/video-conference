@@ -67,10 +67,6 @@ export const useGetLatestCall = () => {
     loadCalls();
   }, [client, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
-  // Define a date object set to midnight of the current day (currently unused)
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
   // Return the call and loading state for use in components
   return {
     call,

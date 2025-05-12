@@ -33,9 +33,9 @@
 .str-video__participant-list {
   background-color: #1c1f2e;
   padding: 10px;
-  border-radius: 10px;
+  border-top: 10px;
   color: white;
-  height: 100%;
+  flex: 1;
 }
 
 .str-video__call-controls__button {
@@ -115,7 +115,8 @@
 .show-block {
   width: 100%;
   max-width: 350px;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes show {

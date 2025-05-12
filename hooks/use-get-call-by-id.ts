@@ -49,7 +49,10 @@ export const useGetCallById = (id: string) => {
         // Check for scheduled call permissions
         if (call.state.custom.is_scheduled) {
           const userEmail = user?.primaryEmailAddress?.emailAddress;
-          const isAllowed = call.state.custom.members.includes(userEmail);
+          const members = call.state.custom.members || [];
+          const isAllowed =
+            members.includes(userEmail) ||
+            call.state.createdBy?.id === user?.id;
 
           if (isAllowed) {
             setCall(call); // Grant access
@@ -60,6 +63,7 @@ export const useGetCallById = (id: string) => {
               variant: "destructive",
             });
             router.push("/"); // Redirect to home
+            return;
           }
         } else {
           // If not scheduled, allow access
@@ -72,6 +76,7 @@ export const useGetCallById = (id: string) => {
           variant: "destructive",
         });
         router.push("/"); // Redirect to home
+        return;
       }
 
       setIsCallLoading(false); // Stop loading
