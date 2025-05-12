@@ -2,20 +2,24 @@ import { useUser } from "@clerk/nextjs";
 import { Call, useStreamVideoClient } from "@stream-io/video-react-sdk";
 import { useEffect, useState } from "react";
 
+// Define a custom hook to fetch the latest upcoming call
 export const useGetLatestCall = () => {
-  const [calls, setCalls] = useState<Call[]>([]);
+  // Initialize state for storing the latest call and loading status, and set up client and user
+  const [call, setCalls] = useState<Call>();
   const [isLoading, setIsLoading] = useState(false);
   const client = useStreamVideoClient();
   const { user } = useUser();
 
+  // Use useEffect to fetch calls when dependencies change
   useEffect(() => {
+    // Async function to load calls, checking for client and user existence
     const loadCalls = async () => {
       if (!client || !user?.id) return;
-
       setIsLoading(true);
 
       try {
-        const { calls } = await client.queryCalls({
+        // Query calls with sorting by start time (descending) and filters for user-created or user-included calls
+        const { calls: newCalls } = await client.queryCalls({
           sort: [
             {
               field: "starts_at",
@@ -35,30 +39,41 @@ export const useGetLatestCall = () => {
           },
         });
 
-        setCalls(calls);
+        // Process the most recent call if available, checking if it starts within the next 24 hours
+        if (newCalls.length > 0) {
+          const newCall = newCalls[0];
+          const { startsAt } = newCall.state;
+
+          if (startsAt) {
+            const now = new Date();
+            if (
+              new Date(startsAt) > now &&
+              new Date(startsAt) < new Date(now.getTime() + 24 * 60 * 60 * 1000)
+            ) {
+              setCalls(newCall);
+            }
+          }
+        }
       } catch (error) {
+        // Handle errors by logging them
         console.log(error);
       } finally {
+        // Reset loading state after the operation completes
         setIsLoading(false);
       }
     };
 
+    // Execute the loadCalls function
     loadCalls();
   }, [client, user?.id, user?.primaryEmailAddress?.emailAddress]);
 
+  // Define a date object set to midnight of the current day (currently unused)
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
-  const todayCalls = calls.filter(({ state: { startsAt } }: Call) => {
-    return (
-      startsAt &&
-      new Date(startsAt) > now &&
-      new Date(startsAt) < new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    );
-  });
-
+  // Return the call and loading state for use in components
   return {
-    todayCalls,
+    call,
     isLoading,
   };
 };

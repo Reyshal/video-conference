@@ -4,47 +4,81 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useToast } from "./use-toast";
 
-export const useGetCallById = (id: string | string[]) => {
-  const [call, setCall] = useState<Call>();
-  const [isCallLoading, setIsCallLoading] = useState(true);
-  const { user } = useUser();
-  const router = useRouter();
-  const { toast } = useToast();
+// Custom hook to fetch a call by its ID and check its status
+export const useGetCallById = (id: string) => {
+  const [call, setCall] = useState<Call>(); // Stores the fetched call object
+  const [isCallLoading, setIsCallLoading] = useState(true); // Tracks loading state
+  const { user } = useUser(); // Current user from Clerk
+  const router = useRouter(); // Navigation router
+  const { toast } = useToast(); // Toast notification
 
-  const client = useStreamVideoClient();
+  const client = useStreamVideoClient(); // Stream video client
 
   useEffect(() => {
+    // Return early if the client hasn't loaded yet
     if (!client) return;
 
     const loadCall = async () => {
-      const { calls } = await client.queryCalls({
-        filter_conditions: {
-          id,
-        },
-      });
+      const call = client.call("default", id); // Get the call instance
+      await call.get(); // Fetch latest call data
 
-      if (
-        calls.length > 0 &&
-        (calls[0].state?.custom?.members?.includes(
-          user?.primaryEmailAddress?.emailAddress
-        ) ||
-          calls[0].state.createdBy?.id === user?.id)
-      ) {
-        setCall(calls[0]);
+      // Proceed only if the call and its state exist
+      if (call && call.state) {
+        // Check if the user is blocked
+        if (call.state.blockedUserIds.includes(user?.id || "")) {
+          toast({
+            title: "Call is blocked",
+            description: "You have been blocked from this call.",
+            variant: "destructive",
+          });
+          router.push("/"); // Redirect to home
+          return;
+        }
+
+        // Check if the call has already ended
+        if (call.state.endedAt) {
+          toast({
+            title: "Call ended",
+            description: "This call has already ended.",
+            variant: "destructive",
+          });
+          router.push("/"); // Redirect to home
+          return;
+        }
+
+        // Check for scheduled call permissions
+        if (call.state.custom.is_scheduled) {
+          const userEmail = user?.primaryEmailAddress?.emailAddress;
+          const isAllowed = call.state.custom.members.includes(userEmail);
+
+          if (isAllowed) {
+            setCall(call); // Grant access
+          } else {
+            toast({
+              title: "You are not a member of this call",
+              description: "You are not a member of this call.",
+              variant: "destructive",
+            });
+            router.push("/"); // Redirect to home
+          }
+        } else {
+          // If not scheduled, allow access
+          setCall(call);
+        }
       } else {
         toast({
           title: "Call not found",
           description: "This call does not exist.",
           variant: "destructive",
         });
-        router.push("/");
+        router.push("/"); // Redirect to home
       }
 
-      setIsCallLoading(false);
+      setIsCallLoading(false); // Stop loading
     };
 
-    loadCall();
-  }, [client, id, user, router]);
+    loadCall(); // Execute fetch on mount or dependency change
+  }, [client, id, user, router, toast]);
 
-  return { call, isCallLoading };
+  return { call, isCallLoading }; // Expose call and loading state
 };

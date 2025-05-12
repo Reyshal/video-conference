@@ -13,11 +13,13 @@ import { Input } from "@/components/ui/input";
 import { useChatContext } from "stream-chat-react";
 import CreatableSelect from "react-select/creatable";
 
+// Type definition for a meeting participant
 interface MemberOptionType {
   label: string;
   value: string;
 }
 
+// Type definition for meeting form values
 interface ValuesType {
   dateTime: Date;
   description: string;
@@ -27,103 +29,98 @@ interface ValuesType {
 
 const MeetingTypeList = () => {
   const router = useRouter();
+
+  // Tracks the current meeting state (schedule, join, instant)
   const [meetingState, setMeetingState] = useState<
     "isScheduleMeeting" | "isJoiningMeeting" | "isInstantMeeting" | undefined
   >();
-  const { user } = useUser();
-  const videoClient = useStreamVideoClient();
-  const { client: chatClient } = useChatContext();
+
+  const { user } = useUser(); // Authenticated user
+  const videoClient = useStreamVideoClient(); // Stream video client
+  const { client: chatClient } = useChatContext(); // Chat client from Stream
+
+  // Initial form state
   const [values, setValues] = useState<ValuesType>({
     dateTime: new Date(),
     description: "",
     link: "",
     members: [],
   });
-  const [callDetails, setCallDetails] = useState<Call>();
-  const { toast } = useToast();
 
+  const [callDetails, setCallDetails] = useState<Call>(); // Stores call info
+  const { toast } = useToast(); // Notification/toast hook
+
+  // Handles meeting creation (instant or scheduled)
   const createMeeting = async () => {
     if (!videoClient || !user) return;
 
     try {
+      // Show warning if no date/time is selected
       if (!values.dateTime) {
-        toast({
-          title: "Please select a date and time",
-        });
+        toast({ title: "Please select a date and time" });
         return;
       }
 
-      const id = crypto.randomUUID();
-      const call = videoClient.call("default", id);
-      const channel = chatClient.channel("messaging", id);
+      const id = crypto.randomUUID(); // Unique ID for meeting
+      const call = videoClient.call("default", id); // Create call on Stream
+      const channel = chatClient.channel("messaging", id); // Create chat channel
 
-      if (!call) {
-        toast({
-          title: "Failed to create meeting",
-        });
-      }
-      if (!channel) {
-        toast({
-          title: "Failed to create channel",
-        });
-      }
+      // Show errors if either fail
+      if (!call) toast({ title: "Failed to create meeting" });
+      if (!channel) toast({ title: "Failed to create channel" });
 
+      // Create the chat channel and add user
       await channel.create();
-      await channel.addMembers([user?.id]);
+      await channel.addMembers([user.id]);
 
-      const startAt =
-        values.dateTime.toISOString() || new Date(Date.now()).toISOString();
+      // Format meeting metadata
+      const startAt = values.dateTime.toISOString();
       const description = values.description || "Instant meeting";
-      const members =
-        values.members
-          .map((member) => member.value)
-          .filter((member) => validateEmail(member)) || [];
+      const isScheduled = Boolean(values.description);
+      const members = values.members
+        .map((member) => member.value)
+        .filter((member) => validateEmail(member));
 
+      // Create or fetch the call on Stream
       await call.getOrCreate({
         data: {
           starts_at: startAt,
-          custom: {
-            description,
-            members,
-          },
+          custom: { is_scheduled: isScheduled, description, members },
         },
       });
 
-      setCallDetails(call);
+      setCallDetails(call); // Store call details
 
+      // Navigate to meeting page if it's an instant meeting
       if (!values.description) {
         router.push(`/meeting/${id}`);
       }
 
-      toast({
-        title: "Meeting created",
-      });
+      toast({ title: "Meeting created" }); // Notify user
     } catch (error) {
       console.log(error);
-      toast({
-        title: "Failed to create meeting",
-      });
+      toast({ title: "Failed to create meeting" });
     }
   };
 
+  // Handle changes to participants list
   const handleChangeMembers = (value: ReadonlyArray<MemberOptionType>) => {
     const members = value as MemberOptionType[];
-    setValues({
-      ...values,
-      members,
-    });
+    setValues({ ...values, members });
   };
 
+  // Simple email validation function
   const validateEmail = (email: string) => {
-    // Simple regex for email validation
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
   };
 
+  // Generate meeting link using call ID
   const meetingLink = `${process.env.NEXT_PUBLIC_BASE_URL}/meeting/${callDetails?.id}`;
 
   return (
     <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl-grid-cols-4">
+      {/* Buttons for different meeting types */}
       <HomeCard
         img="/icons/add-meeting.svg"
         title="New Meeting"
@@ -153,6 +150,7 @@ const MeetingTypeList = () => {
         className="bg-yellow-1"
       />
 
+      {/* Schedule Meeting Modal */}
       {!callDetails ? (
         <MeetingModal
           isOpen={meetingState === "isScheduleMeeting"}
@@ -160,27 +158,28 @@ const MeetingTypeList = () => {
           title="Create Meeting"
           handleClick={createMeeting}
         >
+          {/* Description input */}
           <div className="flex flex-col gap-2.5">
             <label className="text-base text-normal leading-[22px] text-sky-2">
               Add a description
             </label>
             <Textarea
               className="border-none bg-dark-3 focus-visible:ring-0 focus-visible:ring-offset-0"
-              onChange={(e) => {
-                setValues({ ...values, description: e.target.value });
-              }}
+              onChange={(e) =>
+                setValues({ ...values, description: e.target.value })
+              }
               placeholder="Daily Meeting..."
             />
           </div>
+
+          {/* Date/time input */}
           <div className="flex w-full flex-col gap-2.5">
             <label className="text-base text-normal leading-[22px] text-sky-2">
               Select Date and Time
             </label>
             <ReactDatePicker
               selected={values.dateTime}
-              onChange={(date) => {
-                setValues({ ...values, dateTime: date! });
-              }}
+              onChange={(date) => setValues({ ...values, dateTime: date! })}
               showTimeSelect
               timeFormat="HH:mm"
               timeIntervals={15}
@@ -189,6 +188,8 @@ const MeetingTypeList = () => {
               className="w-full rounded bg-dark-3 p-2 focus:outline-none"
             />
           </div>
+
+          {/* Participants input */}
           <div className="flex w-full flex-col">
             <label className="text-base text-normal leading-[22px] text-sky-2">
               Participants
@@ -200,9 +201,9 @@ const MeetingTypeList = () => {
               isMulti
               placeholder="reyke.svb@gmail.com"
               value={values.members}
-              onChange={(value) => {
-                handleChangeMembers(value as ReadonlyArray<MemberOptionType>);
-              }}
+              onChange={(value) =>
+                handleChangeMembers(value as ReadonlyArray<MemberOptionType>)
+              }
               styles={{
                 control: (base) => ({
                   ...base,
@@ -246,6 +247,7 @@ const MeetingTypeList = () => {
           </div>
         </MeetingModal>
       ) : (
+        // Modal shown after meeting is created
         <MeetingModal
           isOpen={meetingState === "isScheduleMeeting"}
           onClose={() => setMeetingState(undefined)}
@@ -253,15 +255,15 @@ const MeetingTypeList = () => {
           className="text-center"
           handleClick={() => {
             navigator.clipboard.writeText(meetingLink);
-            toast({
-              title: "Link copied",
-            });
+            toast({ title: "Link copied" });
           }}
           image="/icons/checked.svg"
           buttonIcon="/icons/copy.svg"
           buttonText="Copy Meeting Link"
         />
       )}
+
+      {/* Instant meeting modal */}
       <MeetingModal
         isOpen={meetingState === "isInstantMeeting"}
         onClose={() => setMeetingState(undefined)}
@@ -270,6 +272,8 @@ const MeetingTypeList = () => {
         buttonText="Start Meeting"
         handleClick={createMeeting}
       />
+
+      {/* Join meeting modal */}
       <MeetingModal
         isOpen={meetingState === "isJoiningMeeting"}
         onClose={() => setMeetingState(undefined)}
