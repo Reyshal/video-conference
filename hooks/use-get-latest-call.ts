@@ -42,13 +42,15 @@ export const useGetLatestCall = () => {
         // Process the most recent call if available, checking if it starts within the next 24 hours
         if (newCalls.length > 0) {
           const newCall = newCalls[0];
-          const { startsAt } = newCall.state;
+          const { startsAt, endedAt } = newCall.state;
 
           if (startsAt) {
             const now = new Date();
             if (
               new Date(startsAt) > now &&
-              new Date(startsAt) < new Date(now.getTime() + 24 * 60 * 60 * 1000)
+              new Date(startsAt) <
+                new Date(now.getTime() + 24 * 60 * 60 * 1000) &&
+              !endedAt
             ) {
               setCalls(newCall);
             }

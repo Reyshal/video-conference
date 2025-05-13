@@ -61,7 +61,6 @@ export const useGetCalls = () => {
 
   // Separate ended or past-start-time calls
   const endedCalls = calls.filter(({ state: { startsAt, endedAt } }: Call) => {
-    console.log(startsAt, !endedAt); // Debug logging (can be removed in production)
     return (startsAt && new Date(startsAt) < now) || !!endedAt;
   });
 
