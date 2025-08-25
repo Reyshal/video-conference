@@ -32,14 +32,23 @@
 
 .str-video__participant-list {
   background-color: #1c1f2e;
-  padding: 10px;
+  padding: 0px;
   border-top: 10px;
   color: white;
   flex: 1;
 }
 
-.str-video__call-controls__button {
-  height: 40px;
+.str-video__call-controls {
+  padding: 0 !important;
+}
+
+.str-video__video-preview-container {
+  width: 100% !important;
+  max-width: 500px;
+}
+
+.str-video__participant-list-header {
+  display: none !important;
 }
 
 .glassmorphism {
@@ -113,8 +122,6 @@
 /* animation */
 
 .show-block {
-  width: 100%;
-  max-width: 350px;
   display: flex;
   flex-direction: column;
 }

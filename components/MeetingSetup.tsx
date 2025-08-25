@@ -33,7 +33,7 @@ const MeetingSetup = ({
   }, [isMicCamToggledOn, call?.camera, call?.microphone]);
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-3 text-white">
+    <div className="flex h-screen w-full flex-col items-center justify-center gap-3 text-white px-3 xl:px-0">
       <h1 className="text-2xl font-bold">Setup</h1>
       <VideoPreview />
       <div className="flex h-16 items-center justify-center gap-3">

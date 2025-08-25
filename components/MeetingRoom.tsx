@@ -3,23 +3,14 @@ import {
   CallControls,
   CallingState,
   CallParticipantsList,
-  CallStatsButton,
   PaginatedGridLayout,
   RecordingInProgressNotification,
-  SpeakerLayout,
   StreamVideoEvent,
   useCall,
   useCallStateHooks,
 } from "@stream-io/video-react-sdk";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import React, { useEffect, useRef, useState } from "react";
-import { LayoutList, MessageSquare, Users } from "lucide-react";
+import { MessageSquare, Users } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import EndCallButton from "./EndCallButton";
 import Loader from "./Loader";
@@ -29,9 +20,8 @@ import { Input } from "./ui/input";
 import { toast } from "@/hooks/use-toast";
 import { AddParticipantModal } from "./AddParticipantModal";
 import { Button } from "./ui/button";
-
-// Define layout type options
-type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
+import { IoIosClose } from "react-icons/io";
+import { IoSend } from "react-icons/io5";
 
 const MeetingRoom = () => {
   const call = useCall(); // Current call instance
@@ -41,7 +31,6 @@ const MeetingRoom = () => {
 
   // UI state
   const [state, setState] = useState({
-    layout: "speaker-left" as CallLayoutType,
     showParticipant: false,
     showChat: false,
     showAddParticipant: false,
@@ -81,17 +70,7 @@ const MeetingRoom = () => {
   // Show loader while joining
   if (callingState !== CallingState.JOINED) return <Loader />;
 
-  // Renders the current call layout based on selected option
-  const Calllayout = () => {
-    switch (state.layout) {
-      case "grid":
-        return <PaginatedGridLayout />;
-      case "speaker-right":
-        return <SpeakerLayout participantsBarPosition="left" />;
-      default:
-        return <SpeakerLayout participantsBarPosition="right" />;
-    }
-  };
+  // Grid layout is default
 
   // Render each chat message
   const renderedMessages = messages?.map((message) => {
@@ -160,92 +139,141 @@ const MeetingRoom = () => {
 
         {/* Chat panel */}
         <div
-          className={cn("h-[calc(100vh-200px)] hidden mr-2", {
-            "show-block": state.showChat,
-          })}
+          className={cn(
+            "fixed z-50 left-0 top-0 bottom-0 w-full max-w-[500px] transition-transform duration-300 ease-out",
+            {
+              "-translate-x-full": !state.showChat,
+              "translate-x-0": state.showChat,
+            }
+          )}
+          onClick={(e) => e.stopPropagation()}
         >
-          <form
-            onSubmit={handleSendMessage}
-            className="flex flex-col gap-4 bg-dark-1 h-full py-5 w-full rounded-[10px] text-sm"
-          >
-            <p className="px-3">Meeting Chat</p>
-            <div
-              ref={chatContainerRef}
-              className="h-full overflow-y-scroll flex flex-col gap-3 px-3"
+          <div className="px-5 pb-5 h-full bg-dark-1 flex flex-col">
+            <div className="flex py-5 justify-between items-center">
+              <p>Meeting Chat</p>
+              <button onClick={handleShowChat}>
+                <IoIosClose className="text-3xl" />
+              </button>
+            </div>
+            <form
+              onSubmit={handleSendMessage}
+              className="flex flex-1 flex-col gap-4 w-full text-sm"
             >
-              {renderedMessages}
-            </div>
+              <div
+                ref={chatContainerRef}
+                className="overflow-y-scroll flex-1 flex flex-col gap-3"
+              >
+                {renderedMessages}
+              </div>
 
-            {/* Input field for chat */}
-            <div className="px-3">
-              <Input
-                placeholder="Send a message"
-                className="border-none bg-dark-3 focus-visible::ring-0 focus-visible:ring-offset-0"
-                onChange={(e) =>
-                  setState({ ...state, message: e.target.value })
-                }
-                value={state.message}
-              />
-            </div>
-          </form>
+              <div className="flex gap-3 justify-between">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Send a message"
+                    className="border-none bg-dark-3 focus-visible::ring-0 focus-visible:ring-offset-0 w-full"
+                    onChange={(e) =>
+                      setState({ ...state, message: e.target.value })
+                    }
+                    value={state.message}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="flex items-center gap-2 bg-dark-3 hover:bg-dark-2 text-white h-10"
+                >
+                  <IoSend className="text-xl" />
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
+
+        {/* Backdrop to close side panels when clicking outside */}
+        {(state.showChat || state.showParticipant) && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40"
+            onClick={() =>
+              setState({ ...state, showChat: false, showParticipant: false })
+            }
+          />
+        )}
 
         {/* Call layout (video feeds) */}
         <div className="flex size-full max-w-[1000px] items-center">
-          <Calllayout />
+          <PaginatedGridLayout />
         </div>
 
         {/* Participant list panel */}
         <div
-          className={cn("h-[calc(100vh-200px)] hidden ml-2", {
-            "show-block": state.showParticipant,
-          })}
+          className={cn(
+            "fixed z-50 right-0 top-0 bottom-0 w-full max-w-[500px] transition-transform duration-300 ease-out",
+            {
+              "translate-x-full": !state.showParticipant,
+              "translate-x-0": state.showParticipant,
+            }
+          )}
+          onClick={(e) => e.stopPropagation()}
         >
-          <CallParticipantsList
-            onClose={() => setState({ ...state, showParticipant: false })}
-          />
-          <div
-            className={cn(
-              "items-center justify-end h-[10%] bg-dark-1 rounded-b-[10px] hidden",
-              {
-                flex: call?.state.custom.is_scheduled,
-              }
-            )}
-          >
-            {/* Add participant button */}
-            <Button
-              onClick={() => setState({ ...state, showAddParticipant: true })}
-              className="bg-blue-1 mx-3 y-2 rounded-[3px]"
+          <div className="px-5 pb-5 h-full bg-dark-1 flex flex-col">
+            <div className="py-5 flex justify-between items-center">
+              <p>Participants</p>
+              <button
+                onClick={() => setState({ ...state, showParticipant: false })}
+              >
+                <IoIosClose className="text-3xl" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              <CallParticipantsList
+                onClose={() => setState({ ...state, showParticipant: false })}
+              />
+            </div>
+
+            <div
+              className={cn(
+                "items-center justify-end bg-dark-1 rounded-b-[10px] hidden",
+                {
+                  flex: call?.state.custom.is_scheduled,
+                }
+              )}
             >
-              Add Participant
-            </Button>
-            <AddParticipantModal
-              isOpen={state.showAddParticipant}
-              setIsOpen={() =>
-                setState({ ...state, showAddParticipant: false })
-              }
-              onAdd={(email: string) => {
-                call?.update({
-                  custom: {
-                    ...call.state.custom,
-                    members: [...call.state.custom.members, email],
-                  },
-                });
+              {/* Add participant button */}
+              <Button
+                onClick={() => setState({ ...state, showAddParticipant: true })}
+                className="bg-blue-1 mx-3 y-2 rounded-[3px]"
+              >
+                Add Participant
+              </Button>
+              <AddParticipantModal
+                isOpen={state.showAddParticipant}
+                setIsOpen={() =>
+                  setState({ ...state, showAddParticipant: false })
+                }
+                onAdd={(email: string) => {
+                  call?.update({
+                    custom: {
+                      ...call.state.custom,
+                      members: [...call.state.custom.members, email],
+                    },
+                  });
 
-                toast({
-                  title: "Participant added",
-                  description: "Participant added successfully.",
-                  variant: "default",
-                });
+                  toast({
+                    title: "Participant added",
+                    description: "Participant added successfully.",
+                    variant: "default",
+                  });
 
-                setState({ ...state, showAddParticipant: false });
-              }}
-            />
+                  setState({ ...state, showAddParticipant: false });
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Control buttons row */}
-        <div className="fixed bottom-0 flex w-full items-center justify-center gap-5 flex-wrap pb-3">
+        <div className="fixed bottom-0 flex w-full items-center justify-center gap-5 gap-y-3 flex-wrap pb-3 px-3">
           {/* Chat toggle button */}
           <button onClick={handleShowChat}>
             <div className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]">
@@ -255,38 +283,6 @@ const MeetingRoom = () => {
 
           {/* Default call control buttons (mic, cam, leave) */}
           <CallControls onLeave={() => router.push("/")} />
-
-          {/* Layout switcher */}
-          <DropdownMenu>
-            <div className="flex items-center">
-              <DropdownMenuTrigger className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]">
-                <LayoutList size={20} className="text-white" />
-              </DropdownMenuTrigger>
-            </div>
-            <DropdownMenuContent className="bg-dark-1 border-dark-1 text-white">
-              {["Grid", "Speaker Left", "Speaker Right"].map((item, index) => {
-                return (
-                  <div key={index}>
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      onClick={() =>
-                        setState((prev) => ({
-                          ...prev,
-                          layout: item.toLowerCase() as CallLayoutType,
-                        }))
-                      }
-                    >
-                      {item}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="border-dark-1" />
-                  </div>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Call statistics */}
-          <CallStatsButton />
 
           {/* Participant toggle button */}
           <button onClick={handleShowParticipant}>
