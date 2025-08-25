@@ -29,7 +29,6 @@ const Navbar = () => {
       </motion.div>
 
       <div className="flex-between gap-5">
-        {/* @ts-expect-error Server Component */}
         <SignedIn>
           <UserButton />
         </SignedIn>
