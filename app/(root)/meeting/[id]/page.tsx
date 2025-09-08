@@ -8,30 +8,31 @@ import MeetingRoom from "@/components/MeetingRoom";
 import { useGetCallById } from "@/hooks/use-get-call-by-id";
 import Loader from "@/components/Loader";
 import { Channel, useChatContext } from "stream-chat-react";
+import { useParams } from "next/navigation";
 
-const Meeting = ({ params: { id } }: { params: { id: string } }) => {
-  const { isLoaded } = useUser();
-  const [isSetupComplete, setIsSetupComplete] = useState(false);
-  const { call, isCallLoading } = useGetCallById(id);
-  const { client: chatClient } = useChatContext();
+export default function Meeting() {
+	const { isLoaded } = useUser();
+	const [isSetupComplete, setIsSetupComplete] = useState(false);
+	const params = useParams<{ id: string }>();
+	const id = params?.id as string;
+	const { call, isCallLoading } = useGetCallById(id);
+	const { client: chatClient } = useChatContext();
 
-  if (!isLoaded || isCallLoading) return <Loader />;
+	if (!isLoaded || isCallLoading) return <Loader />;
 
-  return (
-    <main className="h-screen w-full">
-      <Channel channel={chatClient.channel("messaging", id)}>
-        <StreamCall call={call}>
-          <StreamTheme>
-            {!isSetupComplete ? (
-              <MeetingSetup setIsSetupComplete={setIsSetupComplete} />
-            ) : (
-              <MeetingRoom />
-            )}
-          </StreamTheme>
-        </StreamCall>
-      </Channel>
-    </main>
-  );
-};
-
-export default Meeting;
+	return (
+		<main className="h-screen w-full">
+			<Channel channel={chatClient.channel("messaging", id)}>
+				<StreamCall call={call}>
+					<StreamTheme>
+						{!isSetupComplete ? (
+							<MeetingSetup setIsSetupComplete={setIsSetupComplete} />
+						) : (
+							<MeetingRoom />
+						)}
+					</StreamTheme>
+				</StreamCall>
+			</Channel>
+		</main>
+	);
+}
