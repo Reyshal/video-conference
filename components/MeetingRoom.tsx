@@ -79,14 +79,14 @@ const MeetingRoom = () => {
 				{message.user?.id === user?.id ? (
 					<div className="self-end">
 						<p className="text-sm pb-1">You</p>
-						<p className="py-2 px-4 bg-dark-4 text-sm rounded">
+						<p className="py-2 px-4 bg-dark-4 text-sm rounded max-w-[450px]">
 							{message.text}
 						</p>
 					</div>
 				) : (
 					<div className="self-start">
 						<p className="text-sm pb-1">{message.user?.name}</p>
-						<p className="py-2 px-4 bg-dark-3 text-sm rounded">
+						<p className="py-2 px-4 bg-dark-3 text-sm rounded max-w-[450px]">
 							{message.text}
 						</p>
 					</div>
@@ -151,7 +151,7 @@ const MeetingRoom = () => {
 					<div className="pb-5 h-screen bg-dark-1">
 						<div className="h-[10vh] px-5 py-5 flex justify-between items-center">
 							<p>Meeting Chat</p>
-							<button onClick={handleShowChat}>
+							<button onClick={handleShowChat} className="cursor-pointer">
 								<IoIosClose className="text-3xl" />
 							</button>
 						</div>
@@ -161,7 +161,7 @@ const MeetingRoom = () => {
 						>
 							<div
 								ref={chatContainerRef}
-								className="w-full overflow-y-scroll h-[80vh] flex flex-col gap-3"
+								className="w-full overflow-y-scroll no-scrollbar h-[80vh] flex flex-col gap-3"
 							>
 								{renderedMessages}
 							</div>
@@ -220,6 +220,7 @@ const MeetingRoom = () => {
 							<p>Participants</p>
 							<button
 								onClick={() => setState({ ...state, showParticipant: false })}
+								className="cursor-pointer"
 							>
 								<IoIosClose className="text-3xl" />
 							</button>
@@ -242,7 +243,6 @@ const MeetingRoom = () => {
 							{/* Add participant button */}
 							<Button
 								onClick={() => setState({ ...state, showAddParticipant: true })}
-								className="bg-blue-1 mx-3 y-2 rounded-[3px]"
 							>
 								Add Participant
 							</Button>
@@ -275,7 +275,7 @@ const MeetingRoom = () => {
 				{/* Control buttons row */}
 				<div className="fixed bottom-0 flex w-full items-center justify-center gap-5 gap-y-3 flex-wrap pb-3 px-3">
 					{/* Chat toggle button */}
-					<button onClick={handleShowChat}>
+					<button onClick={handleShowChat} className="cursor-pointer">
 						<div className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]">
 							<MessageSquare size={20} className="text-white" />
 						</div>
@@ -285,7 +285,7 @@ const MeetingRoom = () => {
 					<CallControls onLeave={() => router.push("/")} />
 
 					{/* Participant toggle button */}
-					<button onClick={handleShowParticipant}>
+					<button onClick={handleShowParticipant} className="cursor-pointer">
 						<div className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]">
 							<Users size={20} className="text-white" />
 						</div>
