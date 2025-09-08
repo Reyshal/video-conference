@@ -3,8 +3,8 @@ import {
 	CallControls,
 	CallingState,
 	CallParticipantsList,
-	PaginatedGridLayout,
 	RecordingInProgressNotification,
+	SpeakerLayout,
 	StreamVideoEvent,
 	useCall,
 	useCallStateHooks,
@@ -201,7 +201,7 @@ const MeetingRoom = () => {
 
 				{/* Call layout (video feeds) */}
 				<div className="flex size-full max-w-[1000px] items-center">
-					<PaginatedGridLayout />
+					<SpeakerLayout participantsBarPosition={"right"} />
 				</div>
 
 				{/* Participant list panel */}
